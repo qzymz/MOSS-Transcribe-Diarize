@@ -16,13 +16,23 @@ from pathlib import Path
 
 import requests
 
-from moss_transcribe_diarize import parse_transcript
-from moss_transcribe_diarize.inference_utils import (
-    build_transcription_messages,
-    dtype_from_name,
-    generate_transcription,
-    resolve_device,
-)
+try:
+    from moss_transcribe_diarize import parse_transcript
+    from moss_transcribe_diarize.inference_utils import (
+        build_transcription_messages,
+        dtype_from_name,
+        generate_transcription,
+        resolve_device,
+    )
+except ImportError as exc:  # standalone repo: model package is an external dep
+    raise SystemExit(
+        "This worker needs the MOSS-Transcribe-Diarize model package in the same\n"
+        "Python environment. Install it first (GPU machine):\n"
+        "  git clone https://github.com/OpenMOSS/MOSS-Transcribe-Diarize.git\n"
+        "  uv venv .venv --python 3.12 && source .venv/bin/activate\n"
+        "  uv pip install -e ./MOSS-Transcribe-Diarize\"[torch-runtime]\" --torch-backend=auto\n"
+        "Then run this worker with that environment's python."
+    ) from exc
 
 LOGGER = logging.getLogger("meeting-worker")
 
@@ -188,6 +198,13 @@ class Worker:
 
             return sf.info(str(path)).duration
         except Exception:
+            pass
+        try:  # non-PCM containers (m4a/mp3/mov/...) — decode header via PyAV
+            import av
+
+            with av.open(str(path)) as container:
+                return float(container.duration) / 1e6 if container.duration else None
+        except Exception:
             return None
 
     def process_task(self, task):
@@ -256,7 +273,7 @@ def main(argv=None):
     parser.add_argument("--dtype", default="bf16")
     parser.add_argument("--max-new-tokens", type=int, default=0, help="0 = auto from audio duration")
     parser.add_argument("--prompt", default="", help="custom transcription prompt (empty = default)")
-    parser.add_argument("--work-dir", default="meeting_service/worker_tmp")
+    parser.add_argument("--work-dir", default="worker_tmp")
     parser.add_argument("--once", action="store_true", help="process a single task then exit")
     parser.add_argument("--log-level", default="INFO")
     args = parser.parse_args(argv)
