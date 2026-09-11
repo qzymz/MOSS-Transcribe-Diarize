@@ -1,0 +1,8 @@
+# Server-side dependencies for meeting_service.
+# The model worker additionally needs the repo package itself:
+#   uv pip install -e ".[torch-runtime]" --torch-backend=auto
+fastapi>=0.115
+uvicorn>=0.30
+requests>=2.31
+numpy
+soundfile
