@@ -65,6 +65,12 @@ key），改完执行 `bash meeting_service/deploy/deploy.sh restart` 生效；�
 `status / logs / stop / update`。开机自启执行一次 `pm2 save && pm2 startup`。
 公网 HTTPS 反代示例见 `deploy/nginx-meeting.conf.example`。
 
+**手机/平板录音必须 HTTPS**（浏览器只在安全上下文开放麦克风，明文 HTTP 下
+`navigator.mediaDevices` 为 undefined）。免备案方案：DuckDNS 免费子域名 +
+8443 端口 + DNS 验证签 Let's Encrypt 证书，完整步骤见
+`meeting_service/deploy/nginx-meeting-https.example`；临时测试可用其中的
+cloudflared 快速隧道。
+
 **服务器性能要求极低**：无 torch 依赖（`deploy/server-requirements.txt` 仅
 fastapi/uvicorn/requests），1核 1G VPS 即可；真正需要规划的是磁盘（16kHz WAV
 约 115MB/小时音频）和带宽（每条音频约走 2 遍流量）。
