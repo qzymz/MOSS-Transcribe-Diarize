@@ -20,7 +20,3 @@ runs/
 *.onnx
 *.log
 
-# meeting_service runtime data.
-meeting_service_data/
-meeting_service/worker_tmp/
-meeting_service/deploy/env/
